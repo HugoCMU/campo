@@ -21,12 +21,11 @@ def log(func):
 
 
 class Plant:
+    
     # Directory locations for logging
     root_dir = Path.cwd()
     img_dir = root_dir / 'local' / 'images'
     log_dir = root_dir / 'local' / 'logs'
-
-    # Default values for event functions can be changed
 
     def __init__(self, name):
         self.name = name
