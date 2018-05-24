@@ -29,7 +29,8 @@ def parse_single_image(filename, train=True):
         image = tf.image.random_contrast(image)
         image = tf.image.random_brightness(image)
     # TODO: Use regex to extract target from filename
-    target = re.search('', filename).group()[0]
+    filename_regex = re.search(r'(201\d)-(\d++)-(\d++)--(\d++)-(\d++)-(\d++)', filename).group()
+    date =
     return image, target
 
 

@@ -7,6 +7,12 @@ local/*
 !local/template.sh
 
 # =========== #
+#     Data    #
+# =========== #
+.png*
+tf/data/*
+
+# =========== #
 #  Notebooks  #
 # =========== #
 .idea*
