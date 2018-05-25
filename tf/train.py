@@ -9,16 +9,9 @@ root_dir = Path.cwd()
 data_dir = root_dir / 'data' / 'images_and_annotations'
 train_dir = data_dir / 'PSI_Tray031' / 'tv'
 test_dir = data_dir / 'PSI_Tray032' / 'tv'
+model_dir = root_dir / 'model'
 PLANT_START_DATE = datetime.datetime(2015, 12, 14, hour=12, minute=54, second=51)
 PLANT_AGE_MULT = 1.5 * 2592000  # Age of plant in seconds for normalizing
-
-# feature encoder is taken from tf hub
-image_features = hub.image_embedding_column('image',
-                                            'https://tfhub.dev/google/imagenet/resnet_v1_50/feature_vector/1')
-
-# Build model (regression model on top of image features)
-plant_model = tf.estimator.DNNRegressor(feature_columns=[image_features],
-                                        hidden_units=[256, 128, 64])
 
 
 def plant_age_from_filename(filename):
@@ -52,6 +45,7 @@ def parse_single_image(filename, target, train=True):
 
 def input_fn(image_dir, train=True, shuffle_buffer=10, num_epochs=4, batch_size=2):
     # Create a dataset of (filename, plant_age) tuples
+    # TODO: Labels and Images might be mismatched
     image_files = tf.data.Dataset.list_files(image_dir + '*.png')
     plant_ages = tf.data.Dataset.from_generator(age_gen_from_dir, tf.float32)
     dataset = tf.data.Dataset.zip((image_files, plant_ages))
@@ -72,7 +66,24 @@ def input_fn(image_dir, train=True, shuffle_buffer=10, num_epochs=4, batch_size=
     iterator = dataset.make_one_shot_iterator()
     features = iterator.get_next()
     return features
+    # image, labels = iterator.get_next()
+    # features = {'image': image}
+    # return features, labels
 
+# feature encoder is taken from tf hub
+image_features = hub.image_embedding_column('image',
+                                            'https://tfhub.dev/google/imagenet/resnet_v1_50/feature_vector/1')
+
+# Set up a run config
+run_config = tf.estimator.RunConfig(
+    save_checkpoints_steps=10,
+    model_dir=str(model_dir),
+)
+
+# Build model (regression model on top of image features)
+plant_model = tf.estimator.DNNRegressor(feature_columns=[image_features],
+                                        hidden_units=[256, 128, 64],
+                                        config=run_config)
 
 # Train and evaluate
 train_spec = tf.estimator.TrainSpec(input_fn=lambda: input_fn(str(train_dir)))
