@@ -9,7 +9,6 @@ def log(func):
     :param func:
     :return:
     """
-
     @functools.wraps(func)
     def _(*args, **kwargs):
         time = datetime.datetime.now()

@@ -27,7 +27,7 @@ def plant_age_from_filename(filename):
 def _parse_single(filename, label, train=True):
     # Decode and convert image to appropriate type
     image = tf.image.decode_png(tf.read_file(filename))
-    # image = tf.image.convert_image_dtype(image, tf.float32)  # general image convention for modules
+    # image = tf.image.convert_image_dtype(image, tf.float32)
     # Resize according to module requirements
     image = tf.image.resize_images(image, [224, 224])
     # Augmentation in training
@@ -35,11 +35,10 @@ def _parse_single(filename, label, train=True):
         pass
         # image = tf.image.random_contrast(image)
         # image = tf.image.random_brightness(image)
-    # return image, label
     return {'image': image}, label
 
 
-def input_fn(image_dir, train=True, shuffle_buffer=10, num_epochs=4, batch_size=2):
+def input_fn(image_dir, train=True, shuffle_buffer=2, num_epochs=1, batch_size=1):
     # Create a constants with filenames and plant age labels
     filenames = tf.constant(list(str(file) for file in image_dir.glob('*.png')))
     plant_ages = list(map(plant_age_from_filename, image_dir.glob('*.png')))
@@ -62,9 +61,6 @@ def input_fn(image_dir, train=True, shuffle_buffer=10, num_epochs=4, batch_size=
     iterator = dataset.make_one_shot_iterator()
     features = iterator.get_next()
     return features
-    # image, labels = iterator.get_next()
-    # features = {'image': image}
-    # return features, labels
 
 
 # feature encoder is taken from tf hub
