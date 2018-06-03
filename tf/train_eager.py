@@ -42,11 +42,11 @@ class AgeModel(tf.keras.Model):
         super(AgeModel, self).__init__()
         self.encoder = tf.keras.applications.resnet50.ResNet50(include_top=False,
                                                                weights='imagenet',
-                                                               pooling='max',
+                                                               pooling='avg',
                                                                )
-        self.head_1 = tf.keras.layers.Dense(128, activation='relu')
-        self.head_2 = tf.keras.layers.Dense(64, activation='relu')
-        self.head_3 = tf.keras.layers.Dense(1, activation=None)
+        self.head_1 = tf.keras.layers.Dense(128, kernel_initializer='normal', activation='relu')
+        self.head_2 = tf.keras.layers.Dense(64, kernel_initializer='normal', activation='relu')
+        self.head_3 = tf.keras.layers.Dense(1, kernel_initializer='normal', activation='softmax')
 
     def predict(self, inputs):
         result = self.encoder(inputs)
@@ -57,19 +57,22 @@ class AgeModel(tf.keras.Model):
 
 
 def loss(model, input, target):
-    error = model.predict(input) - target
+    output = model.predict(input)
+    error = output - target
+    print(f'    inside loss. output = {output}, target = {target}, error = {error}')
     return tf.reduce_mean(tf.square(error))
 
 
 def grad(model, input, target):
     with tfe.GradientTape() as tape:
         loss_value = loss(model, input, target)
+        tf.contrib.summary.scalar('loss', loss)
     return tape.gradient(loss_value, model.variables)
 
 
 SHUFFLE_BUFFER = 1
 NUM_EPOCHS = 10
-LEARNING_RATE = 0.01
+LEARNING_RATE = 0.1
 BATCH_SIZE = 1
 
 # Create a constants with filenames and plant age labels
@@ -82,14 +85,20 @@ dataset = dataset.map(lambda filename, label: _parse_single(filename, label))
 dataset = dataset.shuffle(SHUFFLE_BUFFER).repeat(NUM_EPOCHS).batch(BATCH_SIZE)
 
 model = AgeModel()
-optimizer = tf.train.GradientDescentOptimizer(learning_rate=LEARNING_RATE)
+optimizer = tf.train.AdamOptimizer(learning_rate=LEARNING_RATE)
+
+# Tensorboard summary writer
+writer = tf.contrib.summary.create_file_writer(str(model_dir))
+global_step = tf.train.get_or_create_global_step()
 
 # Fix comes from https://stackoverflow.com/questions/49658802/how-can-i-use-tf-data-datasets-in-eager-execution-mode
 x, y = tfe.Iterator(dataset).next()
 print(f'Initial loss {loss(model, x, y)}')
 
 for (i, (image, target)) in enumerate(tfe.Iterator(dataset)):
-    grads = grad(model, image, target)
-    optimizer.apply_gradients(zip(grads, model.variables))
-    if i % 2 == 0:  # nan errors on the losses after this point
-        print(f'Step {i} Loss is {loss(model, image, target)}')
+    global_step.assign_add(1)
+    with tf.contrib.summary.record_summaries_every_n_global_steps(1):
+        grads = grad(model, image, target)
+        optimizer.apply_gradients(zip(grads, model.variables), global_step=global_step)
+        if i % 2 == 0:  # nan errors on the losses after this point
+            print(f'Step {i} Loss is {loss(model, image, target)}')
