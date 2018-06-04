@@ -1,3 +1,5 @@
+import functools
+import datetime
 from pathlib import Path
 import pandas as pd
 
@@ -35,3 +37,30 @@ def load_csv(filename, cols=None):
         assert cols, 'Default columns must be provided if file does not exist'
         pd.DataFrame(columns=cols).to_csv(str(file), index=False)
     return pd.read_csv(str(file))
+
+
+def save_row(filename, row_dict, df=None):
+    """
+    Appends a new row of data to the given file
+    :param filename: (str) file to save to
+    :param row_dict: (dict) dictionary of columns:values
+    :param df: (dataframe) file if already laded
+    :return: None
+    """
+    new_row = pd.DataFrame(row_dict, index=[1])
+    df = df or load_csv(filename)
+    df.append(new_row, ignore_index=True, sort=False)
+    df.to_csv(str(filename), index=False)
+
+
+def timer(func):
+    """
+    Gives the time as a kwarg to the function
+    :param func:
+    :return:
+    """
+    @functools.wraps(func)
+    def _(*args, **kwargs):
+        time = datetime.datetime.now()
+        return func(*args, **kwargs, time=time)
+    return _

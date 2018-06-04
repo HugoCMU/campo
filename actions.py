@@ -10,12 +10,8 @@ class Action:
 
     def __init__(self, campo=None):
         assert campo, 'Action must include a campo'
-
         # There can be multiple plants per campo
         self.plants = list(campo.list_plants()['id'].values)
-
-        for plant in self.plants:
-            plant_df = util.load_csv(plant, cols=self.cols)
 
     def on(self):
         raise NotImplementedError
