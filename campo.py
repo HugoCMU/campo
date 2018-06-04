@@ -21,7 +21,7 @@ class Campo:
     def __init__(self):
         if not self.campo_file.exists():
             campo = pd.DataFrame(columns=self.cols)
-            campo.to_csv(str(self.campo_file))
+            campo.to_csv(str(self.campo_file), index=False)
         # Load campo csv file into memory
         self.campo = pd.read_csv(str(self.campo_file))
 
@@ -37,12 +37,13 @@ class Campo:
 
         # Create entry in plants csv with this new plant
         new_row = pd.DataFrame(plant_attributes, index=[1])
-        pd.concat([self.campo, new_row], sort=False).to_csv(str(self.campo_file))
+        self.campo.append(new_row, ignore_index=True, sort=False).to_csv(str(self.campo_file), index=False)
 
-    def lookup_plant(self, name):
+    def lookup_plant(self, name=None, id=None):
+        assert not all([name, id]), 'name or id must be provided'
         row = self.campo[self.campo['name'] == name]
-        print(row)
-
+        assert len(row) <= 1, 'Multiple plants have the same name'
+        return row
 
 if __name__ == '__main__':
     autogrow1 = Campo()
