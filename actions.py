@@ -19,6 +19,7 @@ class Action:
         raise NotImplementedError
 
     def off(self):
+        datetime.timedelta(minutes=15)
         raise NotImplementedError
 
     def log(self):
