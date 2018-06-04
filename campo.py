@@ -1,4 +1,3 @@
-import datetime
 import uuid
 from pathlib import Path
 import pandas as pd
@@ -13,12 +12,13 @@ class Campo:
     root_dir = Path.cwd()
     img_dir = root_dir / 'local' / 'images'
     log_dir = root_dir / 'local' / 'logs'
-    campo_file = log_dir / 'plants.csv'
 
     # Bare minimum columns for a campo dataframe
     cols = ['name', 'id', 'soil_type', 'seed_type', 'pot']
 
-    def __init__(self):
+    def __init__(self, filename=None):
+        assert filename, 'Please provide a campo file'
+        self.campo_file = self.log_dir / self.check_if_csv(filename)
         if not self.campo_file.exists():
             campo = pd.DataFrame(columns=self.cols)
             campo.to_csv(str(self.campo_file), index=False)
@@ -48,7 +48,14 @@ class Campo:
         assert len(row) <= 1, 'Multiple plants have the same name'
         return row
 
+    @staticmethod
+    def check_if_csv(filename):
+        if filename[:-4] != '.csv':
+            return filename + '.csv'
+        return filename
+
+
 if __name__ == '__main__':
-    autogrow1 = Campo()
+    autogrow1 = Campo(filename='plants.csv')
     autogrow1.new_plant(name='cactus', seed_type='pumpkin', last_name='joe')
     autogrow1.lookup_plant('cactus')
