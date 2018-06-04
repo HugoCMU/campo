@@ -7,23 +7,20 @@ from campo import Campo
 class Action:
     # Default columns for an action csv
     cols = ['name', 'time']
+    name = '-'
 
     def __init__(self, campo=None):
         assert campo, 'Action must include a campo'
         # There can be multiple plants per campo
         self.plants = list(campo.list_plants()['id'].values)
 
-    def on(self):
-        raise NotImplementedError
-
-    def off(self):
-        datetime.timedelta(minutes=15)
-        raise NotImplementedError
-
-    def log(self):
-        time = datetime.datetime.now()
-        pass
-        # Create entry in plant_id csv file with action information
+    @util.timer
+    def log(self, **kwargs):
+        new_row_dict = kwargs
+        new_row_dict['name'] = self.name
+        # Make new row entry in each of the plant files
+        for plant in self.plants:
+            util.save_row(plant, new_row_dict)
 
 
 class Image(Action):
