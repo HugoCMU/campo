@@ -1,4 +1,6 @@
 import argparse
+# Repo specific imports
+import util
 from campo import Campo
 from actions import Image, Fan, Water, Light
 
@@ -14,9 +16,7 @@ parser.add_argument('-p', '--plant', type=str, dest='plant', default=None, help=
 parser.add_argument('-a', '--action', type=str, dest='action', default=None,
                     help='(str) name of the action, must be one of [image, fan, water, light]')
 
-
 if __name__ == '__main__':
-
     args = parser.parse_args()
 
     # Check to make sure required arguments
@@ -25,6 +25,3 @@ if __name__ == '__main__':
     assert args.action in ['image', 'fan', 'water', 'light']
 
     campo = Campo(filename=args.campo)
-
-
-

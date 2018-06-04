@@ -1,38 +1,20 @@
 import uuid
-from pathlib import Path
 import pandas as pd
-
-
-def check_if_csv(filename):
-    if filename[:-4] != '.csv':
-        return filename + '.csv'
-    return filename
-
-
-def load_csv(filename, dir, default_cols):
-    filename = check_if_csv(filename)
-    file = dir / filename
-    if not file.exists():
-        pd.DataFrame(columns=default_cols).to_csv(str(file), index=False)
-    return pd.read_csv(str(file))
-
+# Repo specific imports
+import util
 
 class Campo:
     """
         Campo (Field) holds methods for adding/removing new plants and looking up information
         regarding plants.
     """
-    # Directory locations for logging
-    root_dir = Path.cwd()
-    img_dir = root_dir / 'local' / 'images'
-    log_dir = root_dir / 'local' / 'logs'
 
     # Bare minimum columns for a campo dataframe
     cols = ['name', 'id', 'soil_type', 'seed_type', 'pot']
 
     def __init__(self, filename=None):
-        assert filename, 'Please provide a campo file'
-        self.campo = load_csv(filename, self.log_dir, self.cols)
+        assert filename, 'Please provide the filename of campo when creating campo object'
+        self.campo = util.load_csv(filename, cols=self.cols)
 
     def new_plant(self, **kwargs):
         # Make sure kwargs contains bare minimum columns, fill empties with -

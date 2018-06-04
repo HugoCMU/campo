@@ -1,14 +1,10 @@
-from pathlib import Path
 import datetime
-import pandas
-from campo import Campo, load_csv
+# Repo specific imports
+import util
+from campo import Campo
+
 
 class Action:
-    # Directory locations for logging
-    root_dir = Path.cwd()
-    img_dir = root_dir / 'local' / 'images'
-    log_dir = root_dir / 'local' / 'logs'
-
     # Default columns for an action csv
     cols = ['name', 'time']
 
@@ -19,11 +15,9 @@ class Action:
         self.plants = list(campo.list_plants()['id'].values)
 
         for plant in self.plants:
-            plant_df = load_csv(plant, self.log_dir, self.cols)
+            plant_df = util.load_csv(plant, cols=self.cols)
 
     def on(self):
-
-
         raise NotImplementedError
 
     def off(self):
