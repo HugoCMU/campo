@@ -1,7 +1,7 @@
 from pathlib import Path
 import datetime
 import pandas
-
+from campo import Campo, load_csv
 
 class Action:
     # Directory locations for logging
@@ -9,13 +9,21 @@ class Action:
     img_dir = root_dir / 'local' / 'images'
     log_dir = root_dir / 'local' / 'logs'
 
+    # Default columns for an action csv
+    cols = ['name', 'time']
+
     def __init__(self, campo=None):
         assert campo, 'Action must include a campo'
 
         # There can be multiple plants per campo
-        self.plants = campo.list_plants()
+        self.plants = list(campo.list_plants()['id'].values)
+
+        for plant in self.plants:
+            plant_df = load_csv(plant, self.log_dir, self.cols)
 
     def on(self):
+
+
         raise NotImplementedError
 
     def off(self):
