@@ -39,6 +39,9 @@ class Campo:
         new_row = pd.DataFrame(plant_attributes, index=[1])
         self.campo.append(new_row, ignore_index=True, sort=False).to_csv(str(self.campo_file), index=False)
 
+    def list_plants(self):
+        return self.campo['name', 'id'].unique()
+
     def lookup_plant(self, name=None, id=None):
         assert not all([name, id]), 'name or id must be provided'
         row = self.campo[self.campo['name'] == name]

@@ -9,11 +9,11 @@ class Action:
     img_dir = root_dir / 'local' / 'images'
     log_dir = root_dir / 'local' / 'logs'
 
-    def __init__(self, plant_ids=None):
-        if not plant_ids:
-            raise Exception('Action must have a plant id')
-        # There can be multiple plant id's, actions can affect multiple plants
-        self.plant_ids = plant_ids
+    def __init__(self, campo=None):
+        assert campo, 'Action must include a campo'
+
+        # There can be multiple plants per campo
+        self.plants = campo.list_plants()
 
     def on(self):
         raise NotImplementedError
