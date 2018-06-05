@@ -5,8 +5,8 @@ import tensorflow as tf
 import tensorflow_hub as hub
 
 # Enable eager execution
-tf.enable_eager_execution()
 tfe = tf.contrib.eager
+tf.enable_eager_execution(device_policy=tfe.DEVICE_PLACEMENT_SILENT)
 
 # Load datasets (USE tf.data API)
 root_dir = Path.cwd()
@@ -75,7 +75,7 @@ def grad(model, input, target):
 SHUFFLE_BUFFER = 1
 NUM_EPOCHS = 10
 LEARNING_RATE = 0.0001
-BATCH_SIZE = 8
+BATCH_SIZE = 1
 LOG_EVERY_N_STEPS = 3
 
 # Create a constants with filenames and plant age labels
@@ -86,6 +86,7 @@ dataset = tf.data.Dataset.from_tensor_slices((filenames, labels))
 
 dataset = dataset.map(lambda filename, label: _parse_single(filename, label))
 dataset = dataset.shuffle(SHUFFLE_BUFFER).repeat(NUM_EPOCHS).batch(BATCH_SIZE)
+# dataset = dataset.apply(tf.contrib.data.prefetch_to_device('/gpu:0'))
 
 model = AgeModel()
 optimizer = tf.train.AdamOptimizer(learning_rate=LEARNING_RATE)
@@ -95,10 +96,11 @@ writer = tf.contrib.summary.create_file_writer(str(model_dir))
 global_step = tf.train.get_or_create_global_step()
 writer.set_as_default()
 
-for (i, (image, target)) in enumerate(tfe.Iterator(dataset)):
-    global_step.assign_add(1)
-    with tf.contrib.summary.record_summaries_every_n_global_steps(LOG_EVERY_N_STEPS):
-        grads = grad(model, image, target)
-        optimizer.apply_gradients(zip(grads, model.variables), global_step=global_step)
-        if i % LOG_EVERY_N_STEPS == 0:  # nan errors on the losses after this point
-            print(f'Step {i} Loss is {loss(model, image, target)}')
+with tf.device('/gpu:0'):
+    for (i, (image, target)) in enumerate(tfe.Iterator(dataset)):
+        global_step.assign_add(1)
+        with tf.contrib.summary.record_summaries_every_n_global_steps(LOG_EVERY_N_STEPS):
+            grads = grad(model, image, target)
+            optimizer.apply_gradients(zip(grads, model.variables), global_step=global_step)
+            if i % LOG_EVERY_N_STEPS == 0:  # nan errors on the losses after this point
+                print(f'Step {i} Loss is {loss(model, image, target)}')
