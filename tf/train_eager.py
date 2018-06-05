@@ -31,7 +31,7 @@ def plant_age_from_filename(filename):
 def _parse_single(filename, label):
     # Decode and convert image to appropriate type
     image = tf.image.decode_png(tf.read_file(filename))
-    # image = tf.image.convert_image_dtype(image, tf.float32)
+    image = tf.image.convert_image_dtype(image, tf.float32)  # Also scales from [0, 255] to [0, 1)
     # Resize according to module requirements
     image = tf.image.resize_images(image, [224, 224])
     return image, label
@@ -44,36 +44,39 @@ class AgeModel(tf.keras.Model):
                                                                weights='imagenet',
                                                                pooling='avg',
                                                                )
+        self.bn1 = tf.keras.layers.BatchNormalization()
+        self.bn2 = tf.keras.layers.BatchNormalization()
         self.head_1 = tf.keras.layers.Dense(128, kernel_initializer='normal', activation='relu')
-        self.head_2 = tf.keras.layers.Dense(64, kernel_initializer='normal', activation='relu')
-        self.head_3 = tf.keras.layers.Dense(1, kernel_initializer='normal', activation='softmax')
+        self.head_2 = tf.keras.layers.Dense(1, kernel_initializer='normal')  # , activation='softmax')
 
     def predict(self, inputs):
         result = self.encoder(inputs)
+        result = self.bn1(result)
         result = self.head_1(result)
+        result = self.bn2(result)
         result = self.head_2(result)
-        result = self.head_3(result)
         return result
 
 
 def loss(model, input, target):
     output = model.predict(input)
     error = output - target
-    print(f'    inside loss. output = {output}, target = {target}, error = {error}')
+    # print(f'    inside loss. output = {output}, target = {target}, error = {error}')
     return tf.reduce_mean(tf.square(error))
 
 
 def grad(model, input, target):
     with tfe.GradientTape() as tape:
         loss_value = loss(model, input, target)
-        tf.contrib.summary.scalar('loss', loss)
+        tf.contrib.summary.scalar('loss', loss_value)
     return tape.gradient(loss_value, model.variables)
 
 
 SHUFFLE_BUFFER = 1
 NUM_EPOCHS = 10
-LEARNING_RATE = 0.1
-BATCH_SIZE = 1
+LEARNING_RATE = 0.0001
+BATCH_SIZE = 8
+LOG_EVERY_N_STEPS = 3
 
 # Create a constants with filenames and plant age labels
 filenames = tf.constant(list(str(file) for file in train_dir.glob('*.png')))
@@ -90,15 +93,12 @@ optimizer = tf.train.AdamOptimizer(learning_rate=LEARNING_RATE)
 # Tensorboard summary writer
 writer = tf.contrib.summary.create_file_writer(str(model_dir))
 global_step = tf.train.get_or_create_global_step()
-
-# Fix comes from https://stackoverflow.com/questions/49658802/how-can-i-use-tf-data-datasets-in-eager-execution-mode
-x, y = tfe.Iterator(dataset).next()
-print(f'Initial loss {loss(model, x, y)}')
+writer.set_as_default()
 
 for (i, (image, target)) in enumerate(tfe.Iterator(dataset)):
     global_step.assign_add(1)
-    with tf.contrib.summary.record_summaries_every_n_global_steps(1):
+    with tf.contrib.summary.record_summaries_every_n_global_steps(LOG_EVERY_N_STEPS):
         grads = grad(model, image, target)
         optimizer.apply_gradients(zip(grads, model.variables), global_step=global_step)
-        if i % 2 == 0:  # nan errors on the losses after this point
+        if i % LOG_EVERY_N_STEPS == 0:  # nan errors on the losses after this point
             print(f'Step {i} Loss is {loss(model, image, target)}')
