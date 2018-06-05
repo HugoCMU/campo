@@ -38,6 +38,17 @@ class Campo:
 
 
 if __name__ == '__main__':
+    print('This file should only be run to test functions. Running tests ... ')
     autogrow1 = Campo(filename='test.csv')
     autogrow1.new_plant(name='cactus', seed_type='pumpkin', last_name='joe')
     autogrow1.lookup_plant('cactus')
+
+    import cProfile
+    import pstats
+    cProfile.run('autogrow1.new_plant(name="cactus", seed_type="pumpkin", last_name="joe")', 'prof')
+    p = pstats.Stats('prof')
+    p.strip_dirs().sort_stats('cumulative').print_callers()
+    cProfile.run('autogrow1.lookup_plant("cactus")', 'prof')
+    p = pstats.Stats('prof')
+    p.strip_dirs().sort_stats('cumulative').print_callers()
+

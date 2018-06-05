@@ -48,7 +48,7 @@ def save_row(filename, row_dict, df=None):
     :return: None
     """
     new_row = pd.DataFrame(row_dict, index=[1])
-    df = df or load_csv(filename)
+    df = load_csv(filename) if df is None else df
     df.append(new_row, ignore_index=True, sort=False)
     df.to_csv(str(filename), index=False)
 
