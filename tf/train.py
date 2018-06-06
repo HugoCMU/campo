@@ -2,20 +2,33 @@ import datetime
 from pathlib import Path
 import re
 import tensorflow as tf
-import tensorflow_hub as hub
+# Repo specific imports
+from model import AgeModel
 
 # Enable eager execution
 tfe = tf.contrib.eager
 tf.enable_eager_execution(device_policy=tfe.DEVICE_PLACEMENT_SILENT)
 
-# Load datasets (USE tf.data API)
-root_dir = Path.cwd()
-data_dir = root_dir / 'data' / 'images_and_annotations'
-train_dir = data_dir / 'PSI_Tray031' / 'tv'
-test_dir = data_dir / 'PSI_Tray032' / 'tv'
-model_dir = root_dir / 'model'
+# Dataset/Model specific parameters
+TRAIN_PATH = 'PSI_Tray031/tv'
+TEST_PATH = 'PSI_Tray032/tv'
+MODEL_CKPT = 'model.ckpt'
 PLANT_START_DATE = datetime.datetime(2015, 12, 14, hour=12, minute=54, second=51)
 PLANT_AGE_MULT = 1.5 * 2592000  # Age of plant in seconds for normalizing
+
+# Training parameters
+SHUFFLE_BUFFER = 1
+NUM_EPOCHS = 10
+LEARNING_RATE = 0.0001
+BATCH_SIZE = 1
+LOG_EVERY_N_STEPS = 3
+
+# Directories
+root_dir = Path.cwd()
+data_dir = root_dir / 'data' / 'images_and_annotations'
+train_dir = data_dir / TRAIN_PATH
+test_dir = data_dir / TEST_PATH
+model_dir = root_dir / 'model'
 
 
 def plant_age_from_filename(filename):
@@ -35,48 +48,6 @@ def _parse_single(filename, label):
     # Resize according to module requirements
     image = tf.image.resize_images(image, [224, 224])
     return image, label
-
-
-class AgeModel(tf.keras.Model):
-    def __init__(self):
-        super(AgeModel, self).__init__()
-        self.encoder = tf.keras.applications.resnet50.ResNet50(include_top=False,
-                                                               weights='imagenet',
-                                                               pooling='avg',
-                                                               )
-        self.bn1 = tf.keras.layers.BatchNormalization()
-        self.bn2 = tf.keras.layers.BatchNormalization()
-        self.head_1 = tf.keras.layers.Dense(128, kernel_initializer='normal', activation='relu')
-        self.head_2 = tf.keras.layers.Dense(1, kernel_initializer='normal')  # , activation='softmax')
-
-    def predict(self, inputs):
-        result = self.encoder(inputs)
-        result = self.bn1(result)
-        result = self.head_1(result)
-        result = self.bn2(result)
-        result = self.head_2(result)
-        return result
-
-
-def loss(model, input, target):
-    output = model.predict(input)
-    error = output - target
-    # print(f'    inside loss. output = {output}, target = {target}, error = {error}')
-    return tf.reduce_mean(tf.square(error))
-
-
-def grad(model, input, target):
-    with tfe.GradientTape() as tape:
-        loss_value = loss(model, input, target)
-        tf.contrib.summary.scalar('loss', loss_value)
-    return tape.gradient(loss_value, model.variables)
-
-
-SHUFFLE_BUFFER = 1
-NUM_EPOCHS = 10
-LEARNING_RATE = 0.0001
-BATCH_SIZE = 1
-LOG_EVERY_N_STEPS = 3
 
 # Create a constants with filenames and plant age labels
 filenames = tf.constant(list(str(file) for file in train_dir.glob('*.png')))
@@ -100,7 +71,7 @@ with tf.device('/gpu:0'):
     for (i, (image, target)) in enumerate(tfe.Iterator(dataset)):
         global_step.assign_add(1)
         with tf.contrib.summary.record_summaries_every_n_global_steps(LOG_EVERY_N_STEPS):
-            grads = grad(model, image, target)
+            grads = model.grad(image, target)
             optimizer.apply_gradients(zip(grads, model.variables), global_step=global_step)
             if i % LOG_EVERY_N_STEPS == 0:  # nan errors on the losses after this point
-                print(f'Step {i} Loss is {loss(model, image, target)}')
+                print(f'Step {i} Loss is {model.loss(image, target)}')
