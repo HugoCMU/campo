@@ -4,6 +4,10 @@ import re
 import tensorflow as tf
 import tensorflow_hub as hub
 
+# Enable eager execution
+tfe = tf.contrib.eager
+tf.enable_eager_execution(device_policy=tfe.DEVICE_PLACEMENT_SILENT)
+
 # Load datasets (USE tf.data API)
 root_dir = Path.cwd()
 data_dir = root_dir / 'data' / 'images_and_annotations'
@@ -24,60 +28,79 @@ def plant_age_from_filename(filename):
     return plant_age.total_seconds() / PLANT_AGE_MULT
 
 
-def _parse_single(filename, label, train=True):
+def _parse_single(filename, label):
     # Decode and convert image to appropriate type
     image = tf.image.decode_png(tf.read_file(filename))
-    # image = tf.image.convert_image_dtype(image, tf.float32)
+    image = tf.image.convert_image_dtype(image, tf.float32)  # Also scales from [0, 255] to [0, 1)
     # Resize according to module requirements
     image = tf.image.resize_images(image, [224, 224])
-    # Augmentation in training
-    if train:
-        pass
-        # image = tf.image.random_contrast(image)
-        # image = tf.image.random_brightness(image)
-    return {'image': image}, label
+    return image, label
 
 
-def input_fn(image_dir, train=True, shuffle_buffer=2, num_epochs=1, batch_size=1):
-    # Create a constants with filenames and plant age labels
-    filenames = tf.constant(list(str(file) for file in image_dir.glob('*.png')))
-    plant_ages = list(map(plant_age_from_filename, image_dir.glob('*.png')))
-    labels = tf.constant(plant_ages)
+class AgeModel(tf.keras.Model):
+    def __init__(self):
+        super(AgeModel, self).__init__()
+        self.encoder = tf.keras.applications.resnet50.ResNet50(include_top=False,
+                                                               weights='imagenet',
+                                                               pooling='avg',
+                                                               )
+        self.bn1 = tf.keras.layers.BatchNormalization()
+        self.bn2 = tf.keras.layers.BatchNormalization()
+        self.head_1 = tf.keras.layers.Dense(128, kernel_initializer='normal', activation='relu')
+        self.head_2 = tf.keras.layers.Dense(1, kernel_initializer='normal')  # , activation='softmax')
 
-    # dataset = tf.data.Dataset.list_files(str(image_dir / '*.png'))
-    dataset = tf.data.Dataset.from_tensor_slices((filenames, labels))
-    # Shuffle/Repeat data together for speed
-    dataset = dataset.apply(
-        tf.contrib.data.shuffle_and_repeat(shuffle_buffer, num_epochs))
-
-    # Map function will be different on train and evaluation
-    dataset = dataset.apply(
-        tf.contrib.data.map_and_batch(lambda filename, label: _parse_single(filename, label, train), batch_size))
-
-    # Use GPU prefetch to speed up training
-    # dataset = dataset.apply(tf.contrib.data.prefetch_to_device('/gpu:0'))
-
-    # Make iterator, and yield the next batch
-    iterator = dataset.make_one_shot_iterator()
-    features = iterator.get_next()
-    return features
+    def predict(self, inputs):
+        result = self.encoder(inputs)
+        result = self.bn1(result)
+        result = self.head_1(result)
+        result = self.bn2(result)
+        result = self.head_2(result)
+        return result
 
 
-# feature encoder is taken from tf hub
-image_features = hub.image_embedding_column('image', 'https://tfhub.dev/google/imagenet/resnet_v1_50/feature_vector/1')
+def loss(model, input, target):
+    output = model.predict(input)
+    error = output - target
+    # print(f'    inside loss. output = {output}, target = {target}, error = {error}')
+    return tf.reduce_mean(tf.square(error))
 
-# Set up a run config
-run_config = tf.estimator.RunConfig(
-    save_checkpoints_steps=1,
-    model_dir=str(model_dir),
-)
 
-# Build model (regression model on top of image features)
-plant_model = tf.estimator.DNNRegressor(feature_columns=[image_features],
-                                        hidden_units=[256, 128, 64],
-                                        config=run_config)
+def grad(model, input, target):
+    with tfe.GradientTape() as tape:
+        loss_value = loss(model, input, target)
+        tf.contrib.summary.scalar('loss', loss_value)
+    return tape.gradient(loss_value, model.variables)
 
-# Train and evaluate
-train_spec = tf.estimator.TrainSpec(input_fn=lambda: input_fn(train_dir))
-eval_spec = tf.estimator.EvalSpec(input_fn=lambda: input_fn(test_dir, train=False))
-tf.estimator.train_and_evaluate(plant_model, train_spec, eval_spec)
+
+SHUFFLE_BUFFER = 1
+NUM_EPOCHS = 10
+LEARNING_RATE = 0.0001
+BATCH_SIZE = 1
+LOG_EVERY_N_STEPS = 3
+
+# Create a constants with filenames and plant age labels
+filenames = tf.constant(list(str(file) for file in train_dir.glob('*.png')))
+plant_ages = list(map(plant_age_from_filename, train_dir.glob('*.png')))
+labels = tf.constant(plant_ages)
+dataset = tf.data.Dataset.from_tensor_slices((filenames, labels))
+
+dataset = dataset.map(lambda filename, label: _parse_single(filename, label))
+dataset = dataset.shuffle(SHUFFLE_BUFFER).repeat(NUM_EPOCHS).batch(BATCH_SIZE)
+# dataset = dataset.apply(tf.contrib.data.prefetch_to_device('/gpu:0'))
+
+model = AgeModel()
+optimizer = tf.train.AdamOptimizer(learning_rate=LEARNING_RATE)
+
+# Tensorboard summary writer
+writer = tf.contrib.summary.create_file_writer(str(model_dir))
+global_step = tf.train.get_or_create_global_step()
+writer.set_as_default()
+
+with tf.device('/gpu:0'):
+    for (i, (image, target)) in enumerate(tfe.Iterator(dataset)):
+        global_step.assign_add(1)
+        with tf.contrib.summary.record_summaries_every_n_global_steps(LOG_EVERY_N_STEPS):
+            grads = grad(model, image, target)
+            optimizer.apply_gradients(zip(grads, model.variables), global_step=global_step)
+            if i % LOG_EVERY_N_STEPS == 0:  # nan errors on the losses after this point
+                print(f'Step {i} Loss is {loss(model, image, target)}')
