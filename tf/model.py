@@ -1,13 +1,13 @@
 import tensorflow as tf
 
 
-class AgeModel(tf.keras.Model):
+class PlantAgeModel(tf.keras.Model):
     """
     This model takes an image of the plant as input and regresses an age [0, 1)
     """
 
     def __init__(self):
-        super(AgeModel, self).__init__()
+        super(PlantAgeModel, self).__init__()
         self.encoder = tf.keras.applications.resnet50.ResNet50(include_top=False,
                                                                weights='imagenet',
                                                                pooling='avg',
@@ -34,4 +34,4 @@ class AgeModel(tf.keras.Model):
         with tf.contrib.eager.GradientTape() as tape:
             loss_value = self.loss(input, target)
             tf.contrib.summary.scalar('loss', loss_value)
-        return tape.gradient(loss_value, self.variables)
+        return tape.gradient(loss_value, self.variables), loss_value
