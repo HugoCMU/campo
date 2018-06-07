@@ -4,7 +4,7 @@ import time, datetime
 # Repo specific imports
 import util
 from campo import Campo
-from actions import RelayAction, Image
+from actions import Action
 
 if __name__ == '__main__':
     # Arguments determine run behavior
@@ -25,4 +25,5 @@ if __name__ == '__main__':
     # Scheduler will use datetime to get time, and time.sleep in between scheduled events
     s = sched.scheduler(timefunc=datetime.datetime.now, delayfunc=time.sleep)
 
-    campo = Campo(filename=args.campo)
+    # Set the campo for all future action instances
+    Action.campo = Campo(filename=args.campo)
