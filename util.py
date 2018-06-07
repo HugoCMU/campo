@@ -1,6 +1,7 @@
 import functools
 import datetime
 from pathlib import Path
+import yaml
 import pandas as pd
 
 """
@@ -11,16 +12,28 @@ Contains common utilities and variables used throughout repo.
 root_dir = Path.cwd()
 img_dir = root_dir / 'local' / 'images'
 log_dir = root_dir / 'local' / 'logs'
+sched_dir = root_dir / 'local' / 'sched'
 
 
-def make_sure_csv(filename):
+def load_schedule(schedule):
     """
-    Makes sure that a given filename is a valid csv
+    Loads a schedule yaml into a nested dictionary of actions
+    :param schedule: (str) yaml file
+    :return:
+    """
+    path = sched_dir / check_extension(schedule, '.yaml')
+    return yaml.load(open(str(path), 'r'))
+
+
+def check_extension(filename, ext):
+    """
+    Makes sure that a given filename extension is valid
     :param filename: (str) filename to check
-    :return: filename with .csv ending
+    :param ext: (str) extension to check for
+    :return: filename with proper ending
     """
-    if filename[:-4] != '.csv':
-        return filename + '.csv'
+    if filename[-len(ext):] != ext:
+        return filename + ext
     return filename
 
 
@@ -32,7 +45,7 @@ def load_csv(filename, cols=None):
     :return: (dataframe) loaded csv file
     """
     assert isinstance(filename, str), 'Filename must be a string'
-    file = log_dir / make_sure_csv(filename)
+    file = log_dir / check_extension(filename, '.csv')
     if not file.exists():
         assert cols, 'Default columns must be provided if file does not exist'
         pd.DataFrame(columns=cols).to_csv(str(file), index=False)
@@ -59,8 +72,16 @@ def timer(func):
     :param func:
     :return:
     """
+
     @functools.wraps(func)
     def _(*args, **kwargs):
         time = datetime.datetime.now()
         return func(*args, **kwargs, time=time)
+
     return _
+
+
+if __name__ == '__main__':
+    # Test loading schedule
+    a = load_schedule('test.yaml')
+    print(a)

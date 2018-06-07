@@ -1,17 +1,16 @@
 # =========== #
 # Local Files #
 # =========== #
-local/logs/*
 tf/model/*
-tf/logs/*
+tf/data/*
+tf/log/*
 local/*
-!local/template.sh
+!local/sched/test.yaml
 
 # =========== #
 #     Data    #
 # =========== #
 .png*
-tf/data/*
 
 # =========== #
 #  Notebooks  #
