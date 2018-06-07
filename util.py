@@ -58,12 +58,13 @@ def save_row(filename, row_dict, df=None):
     :param filename: (str) file to save to
     :param row_dict: (dict) dictionary of columns:values
     :param df: (dataframe) file if already laded
-    :return: None
+    :return: new dataframe with added plant
     """
     new_row = pd.DataFrame(row_dict, index=[1])
     df = load_csv(filename) if df is None else df
-    df.append(new_row, ignore_index=True, sort=False)
-    df.to_csv(str(filename), index=False)
+    df = df.append(new_row, ignore_index=True, sort=False)
+    df.to_csv(str(log_dir / filename), index=False)
+    return df
 
 
 def timer(func):

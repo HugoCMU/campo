@@ -25,10 +25,10 @@ class Campo:
         # Unique identifier string per plant
         plant_attributes['id'] = uuid.uuid4()
         # Create entry in plants csv with this new plant
-        util.save_row(self.campo_filename, plant_attributes, df=self.campo)
+        self.campo = util.save_row(self.campo_filename, plant_attributes, df=self.campo)
 
     def list_plants(self):
-        return self.campo['name', 'id'].unique()
+        return list(self.campo.id.unique())
 
     def lookup_plant(self, name=None, id=None):
         assert not all([name, id]), 'name or id must be provided'
@@ -38,17 +38,8 @@ class Campo:
 
 
 if __name__ == '__main__':
-    print('This file should only be run to test functions. Running tests ... ')
-    autogrow1 = Campo(filename='test.csv')
-    autogrow1.new_plant(name='cactus', seed_type='pumpkin', last_name='joe')
-    autogrow1.lookup_plant('cactus')
-
-    import cProfile
-    import pstats
-    cProfile.run('autogrow1.new_plant(name="cactus", seed_type="pumpkin", last_name="joe")', 'prof')
-    p = pstats.Stats('prof')
-    p.strip_dirs().sort_stats('cumulative').print_callers()
-    cProfile.run('autogrow1.lookup_plant("cactus")', 'prof')
-    p = pstats.Stats('prof')
-    p.strip_dirs().sort_stats('cumulative').print_callers()
-
+    print('Running tests for campo.py')
+    c = Campo(filename='test_campo.csv')
+    c.new_plant(name='cactus', seed_type='pumpkin', last_name='joe')
+    print(c.lookup_plant('cactus'))
+    print(c.list_plants())
