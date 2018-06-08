@@ -27,7 +27,7 @@ root_dir = Path.cwd()
 data_dir = root_dir / 'data' / 'images_and_annotations'
 train_dir = data_dir / TRAIN_PATH
 model_dir = root_dir / 'model'
-
+log_dir = root_dir / 'log'
 
 def _plant_age_from_filename(filename):
     """
@@ -87,7 +87,7 @@ if __name__ == '__main__':
     optimizer = tf.train.AdamOptimizer(learning_rate=LEARNING_RATE)
 
     # Tensorboard summary writer
-    writer = tf.contrib.summary.create_file_writer(str(model_dir))
+    writer = tf.contrib.summary.create_file_writer(str(log_dir))
     writer.set_as_default()
 
     # Checkpoint model saver

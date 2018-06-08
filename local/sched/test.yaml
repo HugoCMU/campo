@@ -1,0 +1,11 @@
+actions:
+  - name: 'water'
+    start_time: datetime.time(hour=8) # 8am
+    duration: datetime.timedelta(minutes=5)
+  - name: 'light'
+    type: 'full' # vegetation and flowering lights
+    start_time: datetime.time(hour=7) # 7am
+    duration: datetime.timedelta(hours=14)
+  - name: 'water'
+    start_time: datetime.time(hour=20) # 8pm
+    duration: datetime.timedelta(minutes=5)
