@@ -8,10 +8,12 @@ class PlantAgeModel(tf.keras.Model):
 
     def __init__(self):
         super(PlantAgeModel, self).__init__()
-        self.encoder = tf.keras.applications.resnet50.ResNet50(include_top=False,
-                                                               weights='imagenet',
-                                                               pooling='avg',
-                                                               )
+        self.encoder = tf.keras.applications.mobilenet.MobileNet(input_shape=(160, 160, 3),
+                                                                 depth_multiplier=0.5,
+                                                                 include_top=False,
+                                                                 weights='imagenet',
+                                                                 pooling='avg',
+                                                                 )
         self.bn1 = tf.keras.layers.BatchNormalization()
         self.bn2 = tf.keras.layers.BatchNormalization()
         self.head_1 = tf.keras.layers.Dense(128, kernel_initializer='normal', activation='relu')

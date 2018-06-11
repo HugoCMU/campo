@@ -14,7 +14,7 @@ TRAIN_PATH = 'PSI_Tray031/tv'
 
 # Training parameters
 MODEL_CKPT = 'model.ckpt'
-IMAGE_SIZE = [224, 224]
+IMAGE_SIZE = [160, 160]
 SHUFFLE_BUFFER = 1
 NUM_EPOCHS = 10
 LEARNING_RATE = 0.0001
@@ -28,6 +28,7 @@ data_dir = root_dir / 'data' / 'images_and_annotations'
 train_dir = data_dir / TRAIN_PATH
 model_dir = root_dir / 'model'
 log_dir = root_dir / 'log'
+
 
 def _plant_age_from_filename(filename):
     """
