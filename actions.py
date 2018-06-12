@@ -84,9 +84,6 @@ class Action:
                             argument='flight_off',
                             kwargs={'action': 'light', 'type': type})
 
-    def image(self, **kwargs):
-        raise NotImplementedError
-
     def serial_command(self, command, **kwargs):
         com = self.serial_command_dict[command]
         assert com, f'Serial command {com} not found'

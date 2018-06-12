@@ -5,6 +5,7 @@ import time, datetime
 import util
 from campo import Campo
 from actions import Action
+import camera
 
 if __name__ == '__main__':
     # Arguments determine run behavior
@@ -25,6 +26,14 @@ if __name__ == '__main__':
     for action_dict in util.load_schedule(args.sched)['actions']:
         # Create action instance and add it to the scheduler
         a = Action(action_dict, schedule=s)
+
+    # Add camera images (every hour) to schedule
+    for hour in range(0, 23):
+        s.enterabs(time=datetime.datetime.combine(datetime.date.today(), datetime.time(hour=hour)),
+                   priority=1,
+                   action=camera.image())
+        # argument='vlight_on',
+        # kwargs={'action': 'light', 'type': type})
 
     # Run until all actions have been completed
     while not s.empty():
