@@ -1,7 +1,25 @@
 import datetime
 import serial
+import functools
 # Repo specific imports
 import util
+
+def eval_times(func):
+    @functools.wraps(func)
+    def _(*args, **kwargs):
+        assert all(k in kwargs for k in ['start_time', 'duration']), 'Action function missing arguments'
+        # Evaluate the datetime strings in the schedule
+        start_time = eval(kwargs['start_time'])
+        duration = eval(kwargs['duration'])
+        # Start and stop times are based on current date
+        start_time = datetime.datetime.combine(datetime.date.today(), start_time)
+        stop_time = start_time + duration
+        # Add the updated times to the kwargs
+        kwargs['start_time'] = start_time
+        kwargs['stop_time'] = stop_time
+        kwargs['duration'] = duration
+        return func(*args, **kwargs)
+    return _
 
 
 class Action:
@@ -31,41 +49,33 @@ class Action:
         assert callable(action_func), 'Could not find action in action function dictionary'
         action_func(**action_dict)
 
+    @eval_times
     def water(self, **kwargs):
-        start_time = kwargs.get('start_time', None)
-        duration = kwargs.get('duration', None)
-        assert all([start_time, duration]), 'Action function missing arguments'
-        # Start and stop times are based on current date
-        start_time = datetime.datetime.combine(datetime.date.today(), eval(start_time))
-        stop_time = start_time + eval(duration)
+        assert all(k in kwargs for k in ['start_time', 'stop_time']), 'Action function missing arguments'
         # Add pump on and pump off serial commands to scheduler
-        self.s.enterabs(time=start_time,
+        self.s.enterabs(time=kwargs['start_time'],
                         priority=1,
                         action=self.serial_command,
                         argument='pump_on',
                         kwargs={'action': 'water'})
-        self.s.enterabs(time=stop_time,
+        self.s.enterabs(time=kwargs['stop_time'],
                         priority=1,
                         action=self.serial_command,
                         argument='pump_off',
                         kwargs={'action': 'water'})
 
+    @eval_times
     def light(self, **kwargs):
-        start_time = kwargs.get('start_time', None)
-        duration = kwargs.get('duration', None)
-        type = kwargs.get('type', None)
-        assert all([start_time, duration, type]), 'Action function missing arguments'
-        # Start and stop times are based on current date
-        start_time = datetime.datetime.combine(datetime.date.today(), eval(start_time))
-        stop_time = start_time + eval(duration)
+        assert all(k in kwargs for k in ['start_time', 'stop_time', 'type']), 'Action function missing arguments'
+        type = kwargs['type']
         if type == 'veg' or type == 'full':
             # Add pump on and pump off serial commands to scheduler
-            self.s.enterabs(time=start_time,
+            self.s.enterabs(time=kwargs['start_time'],
                             priority=1,
                             action=self.serial_command,
                             argument='vlight_on',
                             kwargs={'action': 'light', 'type': type})
-            self.s.enterabs(time=stop_time,
+            self.s.enterabs(time=kwargs['stop_time'],
                             priority=1,
                             action=self.serial_command,
                             argument='vlight_off',
@@ -73,12 +83,12 @@ class Action:
 
         if type == 'flow' or type == 'full':
             # Add pump on and pump off serial commands to scheduler
-            self.s.enterabs(time=start_time,
+            self.s.enterabs(time=kwargs['start_time'],
                             priority=1,
                             action=self.serial_command,
                             argument='flight_on',
                             kwargs={'action': 'light', 'type': type})
-            self.s.enterabs(time=stop_time,
+            self.s.enterabs(time=kwargs['stop_time'],
                             priority=1,
                             action=self.serial_command,
                             argument='flight_off',
