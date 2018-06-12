@@ -9,7 +9,7 @@ class PlantAgeModel(tf.keras.Model):
     def __init__(self):
         super(PlantAgeModel, self).__init__()
         self.encoder = tf.keras.applications.mobilenet.MobileNet(input_shape=(160, 160, 3),
-                                                                 depth_multiplier=0.5,
+                                                                 # depth_multiplier=0.5,
                                                                  include_top=False,
                                                                  weights='imagenet',
                                                                  pooling='avg',

@@ -113,4 +113,4 @@ if __name__ == '__main__':
                     print(f'Step {tf.train.get_or_create_global_step().numpy()} Loss is {loss}')
                 if i % SAVE_EVERY_N_STEPS == 0:
                     print(f' ----- Saving model at {ckpt_file}')
-                    ckpt.save(file_prefix=ckpt_file)
+                    ckpt.save(file_prefix=ckpt_file)  # , session=tf.get_default_session())
