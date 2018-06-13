@@ -6,9 +6,10 @@ import util
 # Import pins
 from aiy.vision.pins import PIN_A, PIN_B, PIN_C
 
-pin_dict = {'water': PIN_A,
-            'vlight': PIN_B,
-            'flight': PIN_C}
+pin_dict = {'water': gpiozero.DigitalOutputDevice(PIN_A, active_high=False),
+            'vlight': gpiozero.DigitalOutputDevice(PIN_B, active_high=False),
+            'flight': gpiozero.DigitalOutputDevice(PIN_C, active_high=False),
+            }
 
 
 def image(format='jpeg'):
@@ -31,8 +32,7 @@ def on(action=None):
     :return:
     """
     assert action in pin_dict.keys(), 'action does not exist in pin dictionary'
-    with gpiozero.DigitalOutputDevice(pin=pin_dict[action]) as dev:
-        dev.on()
+    pin_dict[action].on()
 
 
 def off(action=None):
@@ -42,24 +42,22 @@ def off(action=None):
     :return:
     """
     assert action in pin_dict.keys(), 'action does not exist in pin dictionary'
-    with gpiozero.DigitalOutputDevice(pin=pin_dict[action]) as dev:
-        dev.off()
+    pin_dict[action].off()
 
 
 if __name__ == '__main__':
     print('Testing camera.py ...')
     import time
+
     image()
-    on(action='water')
-    on(action='vlight')
-    on(action='flight')
-    time.sleep(3)
-    off(action='water')
-    off(action='vlight')
-    off(action='flight')
-    time.sleep(3)
-    on(action='water')
-    on(action='vlight')
-    on(action='flight')
-
-
+    while True:
+        print('Turning on relays')
+        on(action='water')
+        on(action='vlight')
+        on(action='flight')
+        time.sleep(3)
+        print('Turning off relays')
+        off(action='water')
+        off(action='vlight')
+        off(action='flight')
+        time.sleep(3)
