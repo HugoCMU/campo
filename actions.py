@@ -1,8 +1,8 @@
 import datetime
-import serial
 import functools
 # Repo specific imports
 import util
+import pi
 
 def eval_times(func):
     @functools.wraps(func)
@@ -30,16 +30,10 @@ class Action:
     cols = ['name', 'time']
     name = '-'
 
-    # Serial communication defaults for Arduino (see .ino file)
-    port = '/dev/'
-    baud = 9600
-    serial_command_dict = {'pump_on': 'a',
-                           'pump_off': 'b',
-                           'vlight_on': 'c',
-                           'vlight_off': 'd',
-                           'flight_on': 'e',
-                           'flight_off': 'f',
-                           }
+    # Pin numbers for pump and light relays
+    water_pin = 1
+    vlight_pin = 2
+    flight_pin = 3
 
     def __init__(self, action_dict, schedule):
         assert self.campo, 'Set campo before creating any action objects'
@@ -55,13 +49,13 @@ class Action:
         # Add pump on and pump off serial commands to scheduler
         self.s.enterabs(time=kwargs['start_time'],
                         priority=1,
-                        action=self.serial_command,
-                        argument='pump_on',
+                        action=pi.on,
+                        argument=self.water_pin,
                         kwargs={'action': 'water'})
         self.s.enterabs(time=kwargs['stop_time'],
                         priority=1,
-                        action=self.serial_command,
-                        argument='pump_off',
+                        action=pi.off,
+                        argument=self.water_pin,
                         kwargs={'action': 'water'})
 
     @eval_times
@@ -72,35 +66,27 @@ class Action:
             # Add pump on and pump off serial commands to scheduler
             self.s.enterabs(time=kwargs['start_time'],
                             priority=1,
-                            action=self.serial_command,
-                            argument='vlight_on',
+                            action=pi.on,
+                            argument=self.vlight_pin,
                             kwargs={'action': 'light', 'type': type})
             self.s.enterabs(time=kwargs['stop_time'],
                             priority=1,
-                            action=self.serial_command,
-                            argument='vlight_off',
+                            action=pi.off,
+                            argument=self.vlight_pin,
                             kwargs={'action': 'light', 'type': type})
 
         if type == 'flow' or type == 'full':
             # Add pump on and pump off serial commands to scheduler
             self.s.enterabs(time=kwargs['start_time'],
                             priority=1,
-                            action=self.serial_command,
-                            argument='flight_on',
+                            action=pi.on,
+                            argument=self.flight_pin,
                             kwargs={'action': 'light', 'type': type})
             self.s.enterabs(time=kwargs['stop_time'],
                             priority=1,
-                            action=self.serial_command,
-                            argument='flight_off',
+                            action=pi.off,
+                            argument=self.flight_pin,
                             kwargs={'action': 'light', 'type': type})
-
-    def serial_command(self, command, **kwargs):
-        com = self.serial_command_dict[command]
-        assert com, f'Serial command {com} not found'
-        with serial.Serial(self.port, self.baud) as ser:
-            ser.write(com.encode())
-        kwargs['serial_command'] = command
-        self.log(kwargs)
 
     @util.timer
     def log(self, **kwargs):

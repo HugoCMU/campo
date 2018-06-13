@@ -31,7 +31,7 @@ if __name__ == '__main__':
     for hour in range(0, 23):
         s.enterabs(time=datetime.datetime.combine(datetime.date.today(), datetime.time(hour=hour)),
                    priority=1,
-                   action=camera.image())
+                   action=camera.image)
         # argument='vlight_on',
         # kwargs={'action': 'light', 'type': type})
 
