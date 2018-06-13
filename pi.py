@@ -57,4 +57,9 @@ if __name__ == '__main__':
     off(action='water')
     off(action='vlight')
     off(action='flight')
+    time.sleep(3)
+    on(action='water')
+    on(action='vlight')
+    on(action='flight')
+
 
