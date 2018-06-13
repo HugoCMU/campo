@@ -30,11 +30,6 @@ class Action:
     cols = ['name', 'time']
     name = '-'
 
-    # Pin numbers for pump and light relays
-    water_pin = 1
-    vlight_pin = 2
-    flight_pin = 3
-
     def __init__(self, action_dict, schedule):
         assert self.campo, 'Set campo before creating any action objects'
         self.s = schedule
@@ -50,12 +45,10 @@ class Action:
         self.s.enterabs(time=kwargs['start_time'],
                         priority=1,
                         action=pi.on,
-                        argument=self.water_pin,
                         kwargs={'action': 'water'})
         self.s.enterabs(time=kwargs['stop_time'],
                         priority=1,
                         action=pi.off,
-                        argument=self.water_pin,
                         kwargs={'action': 'water'})
 
     @eval_times
@@ -67,12 +60,10 @@ class Action:
             self.s.enterabs(time=kwargs['start_time'],
                             priority=1,
                             action=pi.on,
-                            argument=self.vlight_pin,
                             kwargs={'action': 'light', 'type': type})
             self.s.enterabs(time=kwargs['stop_time'],
                             priority=1,
                             action=pi.off,
-                            argument=self.vlight_pin,
                             kwargs={'action': 'light', 'type': type})
 
         if type == 'flow' or type == 'full':
@@ -80,12 +71,10 @@ class Action:
             self.s.enterabs(time=kwargs['start_time'],
                             priority=1,
                             action=pi.on,
-                            argument=self.flight_pin,
                             kwargs={'action': 'light', 'type': type})
             self.s.enterabs(time=kwargs['stop_time'],
                             priority=1,
                             action=pi.off,
-                            argument=self.flight_pin,
                             kwargs={'action': 'light', 'type': type})
 
     @util.timer

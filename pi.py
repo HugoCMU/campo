@@ -3,6 +3,15 @@ from picamera import PiCamera
 import gpiozero
 import util
 
+# Import pins
+from aiy.pins import PIN_A
+from aiy.pins import PIN_B
+from aiy.pins import PIN_C
+
+pin_dict = {'water': PIN_A,
+            'vlight': PIN_B,
+            'flight': PIN_C}
+
 
 def image(format='jpeg'):
     """
@@ -17,23 +26,25 @@ def image(format='jpeg'):
         print(f'Image saved at {save_path}')
 
 
-def on(pin):
+def on(action=None):
     """
     Turn on a digital output device (relay)
-    :param pin: (int) pin number
+    :param action:
     :return:
     """
-    with gpiozero.DigitalOutputDevice(pin=pin) as dev:
+    assert action in pin_dict.keys(), 'action does not exist in pin dictionary'
+    with gpiozero.DigitalOutputDevice(pin=pin_dict[action]) as dev:
         dev.on()
 
 
-def off(pin):
+def off(action=None):
     """
     Turn off a digital output device (relay)
-    :param pin: (int) pin number
+    :param action:
     :return:
     """
-    with gpiozero.DigitalOutputDevice(pin=pin) as dev:
+    assert action in pin_dict.keys(), 'action does not exist in pin dictionary'
+    with gpiozero.DigitalOutputDevice(pin=pin_dict[action]) as dev:
         dev.off()
 
 
