@@ -62,7 +62,7 @@ def save_row(filename, row_dict, df=None):
     """
     new_row = pd.DataFrame(row_dict, index=[1])
     df = load_csv(filename) if df is None else df
-    df = df.append(new_row, ignore_index=True, sort=False)
+    df = df.append(new_row, ignore_index=True)#, sort=False)
     df.to_csv(str(log_dir / filename), index=False)
     return df
 

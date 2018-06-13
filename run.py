@@ -3,8 +3,8 @@ import sched
 import time, datetime
 # Repo specific imports
 import util
-from campo import Campo
-from actions import Action
+# from campo import Campo
+# from actions import Action
 import camera
 
 if __name__ == '__main__':
@@ -16,16 +16,16 @@ if __name__ == '__main__':
                         default='test.csv', help='(str) name of the schedule to use')
     args = parser.parse_args()
 
-    # Set the campo for all future action instances
-    Action.campo = Campo(filename=args.campo)
+    # # Set the campo for all future action instances
+    # Action.campo = Campo(filename=args.campo)
 
     # Scheduler will use datetime to get time, and time.sleep in between scheduled events
     s = sched.scheduler(timefunc=datetime.datetime.now, delayfunc=time.sleep)
-
-    # Unpack schedule yaml
-    for action_dict in util.load_schedule(args.sched)['actions']:
-        # Create action instance and add it to the scheduler
-        a = Action(action_dict, schedule=s)
+    #
+    # # Unpack schedule yaml
+    # for action_dict in util.load_schedule(args.sched)['actions']:
+    #     # Create action instance and add it to the scheduler
+    #     a = Action(action_dict, schedule=s)
 
     # Add camera images (every hour) to schedule
     for hour in range(0, 23):
