@@ -73,12 +73,10 @@ def timer(func):
     :param func:
     :return:
     """
-
     @functools.wraps(func)
     def _(*args, **kwargs):
         time = datetime.datetime.now()
         return func(*args, **kwargs, time=time)
-
     return _
 
 

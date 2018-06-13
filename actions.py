@@ -15,9 +15,9 @@ def eval_times(func):
         start_time = datetime.datetime.combine(datetime.date.today(), start_time)
         stop_time = start_time + duration
         # Add the updated times to the kwargs
-        kwargs['start_time'] = start_time
-        kwargs['stop_time'] = stop_time
-        kwargs['duration'] = duration
+        kwargs['start_time'] = start_time.timestamp()
+        kwargs['stop_time'] = stop_time.timestamp()
+        kwargs['duration'] = duration.timestamp()
         return func(*args, **kwargs)
     return _
 
@@ -94,7 +94,7 @@ if __name__ == '__main__':
 
     Action.campo = Campo('test_campo.csv')
 
-    s = sched.scheduler(timefunc=datetime.datetime.now, delayfunc=time.sleep)
+    s = sched.scheduler(timefunc=datetime.datetime.now().timestamp, delayfunc=time.sleep)
 
     # Unpack schedule yaml
     for action_dict in util.load_schedule('test.yaml')['actions']:
