@@ -11,9 +11,9 @@ if __name__ == '__main__':
     # Arguments determine run behavior
     parser = argparse.ArgumentParser(description='Campo AI Microgreen Grower')
     parser.add_argument('-c', '--campo', type=str, dest='campo',
-                        default='test_campo.csv', help='(str) name of the campo')
+                        default='test_campo', help='(str) name of the campo')
     parser.add_argument('-s', '--sched', type=str, dest='sched',
-                        default='test.csv', help='(str) name of the schedule to use')
+                        default='test', help='(str) name of the schedule to use')
     args = parser.parse_args()
 
     # Set the campo for all future action instances

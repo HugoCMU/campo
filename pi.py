@@ -48,4 +48,13 @@ def off(action=None):
 
 if __name__ == '__main__':
     print('Testing camera.py ...')
+    import time
     image()
+    on(action='water')
+    on(action='vlight')
+    on(action='flight')
+    time.sleep(3)
+    off(action='water')
+    off(action='vlight')
+    off(action='flight')
+
