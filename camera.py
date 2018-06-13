@@ -1,5 +1,5 @@
 import datetime
-import PiCamera
+from picamera import PiCamera
 import util
 
 

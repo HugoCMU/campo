@@ -37,4 +37,6 @@ if __name__ == '__main__':
 
     # Run until all actions have been completed
     while not s.empty():
+        print('Running schedule, current time: ' + str(datetime.date.today()))
         s.run()
+        time.sleep(10)
