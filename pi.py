@@ -4,9 +4,7 @@ import gpiozero
 import util
 
 # Import pins
-from aiy.pins import PIN_A
-from aiy.pins import PIN_B
-from aiy.pins import PIN_C
+from aiy.vision.pins import PIN_A, PIN_B, PIN_C
 
 pin_dict = {'water': PIN_A,
             'vlight': PIN_B,
