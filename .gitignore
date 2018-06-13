@@ -12,6 +12,7 @@ local/images/*
 local/logs/*
 local/sched/*
 !local/sched/test.yaml
+!local/logs/test_campo.csv
 campoenv/*
 
 # =========== #
