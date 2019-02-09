@@ -2,3 +2,4 @@ tensorflow-gpu
 pandas
 matplotlib
 numpy
+gym
